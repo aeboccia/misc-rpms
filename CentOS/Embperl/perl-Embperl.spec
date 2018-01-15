@@ -2,7 +2,7 @@ Name:           perl-Embperl
 Version:        2.5.0
 Release:        1%{?dist}
 Summary:        Building dynamic Websites with Perl
-License:        CHECK(Distributable)
+License:        Artistic
 Group:          Development/Libraries
 URL:            http://search.cpan.org/dist/Embperl/
 Source0:        http://www.cpan.org/authors/id/G/GR/GRICHTER/Embperl-%{version}.tar.gz
