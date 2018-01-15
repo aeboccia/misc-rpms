@@ -1,0 +1,31 @@
+From bcce23a15de55a39478f83a7923d8a89f681cc19 Mon Sep 17 00:00:00 2001
+From: Niko Tyni <ntyni@debian.org>
+Date: Tue, 29 Jul 2014 14:34:35 +0300
+Subject: [PATCH] Adapt to an Apache 2.4.10 error page change
+
+The "Forbidden" error page was slightly changed by Apache commit
+
+ https://github.com/apache/httpd/commit/4f8fc53c8f6df76a42ccc89275fcede766662f9e
+ https://svn.apache.org/viewvc/httpd/httpd/branches/2.4.x/modules/http/http_protocol.c?r1=1487127&r2=1610328
+
+breaking the EmbperlObject/epobase.htm test. The fix works
+with both the old and the new page format.
+---
+ test/cmp/epobase.htm | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/test/cmp/epobase.htm b/test/cmp/epobase.htm
+index ba29386..9d0269c 100644
+--- a/test/cmp/epobase.htm
++++ b/test/cmp/epobase.htm
+@@ -5,6 +5,7 @@
+ <H1>Forbidden</H1>
+ ^.*?You don't have permission to access /embperl/EmbperlObject/epobase.htm
+ ^on this server
++^-</p>
+ </BODY></HTML>
+ 
+ 
+-- 
+2.0.1
+

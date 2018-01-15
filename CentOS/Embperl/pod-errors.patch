@@ -1,0 +1,152 @@
+Description: fix some POD errors offending to pod2text, lintian
+ In addition and not fixed by this patch, Embperl/Form/Control/duration.pm has
+ the same POD as price.pm, which is likely wrong on a factual level. Both
+ files use a code point 0x80 in POD and as a string constant, which is the
+ EURO sign from Windows-1252 but unavailable in latin1, 0xA4 in iso8859-15,
+ U+20AC or perhaps best spelled out as 'EUR'
+Author: Florian Schlichting <fsfs@debian.org>
+Forwarded: yes (mailing list)
+
+--- a/Changes.pod
++++ b/Changes.pod
+@@ -1,6 +1,8 @@
+ =pod
+ 
+-=head 2.5.0  16. March 2014
++=encoding iso8859-1
++
++=head1 2.5.0  16. March 2014
+ 
+     - Do not clear old code before compiling a Embperl page
+       in Perl >= 5.14.x because it causes seg faults. This
+@@ -59,7 +61,7 @@
+     
+     Adaptions to Perl 5.14/16 were sponsored by NUREG GmbH
+ 
+-=head 2.4.0  4. Oct 2010
++=head1 2.4.0  4. Oct 2010
+ 
+     - Support for CGI.pm 3.43 (included within Perl 5.10.1)
+       for file uplaods. CGI.pm < 2.43 is not supported anymore.
+--- a/Config.pod
++++ b/Config.pod
+@@ -1,4 +1,4 @@
+-
++=encoding iso8859-1
+ 
+ =head1 NAME
+ 
+@@ -2004,22 +2004,22 @@
+ 
+ =over 
+ 
+-=item 0
++=item C<0>
+ 
+ don't interpret input (default)
+ 
+ 
+-=item 1   
++=item C<1>
+ 
+ unescape html escapes to their characters (i.e. &lt; becomes < )
+ inside of Perl code
+ 
+-=item 2
++=item C<2>
+ 
+ unescape url escapes to their characters (i.e. %26; becomes & )
+ inside of Perl code
+ 
+-=item 3
++=item C<3>
+ 
+ unescape html and url escapes, depending on the context
+ 
+--- a/FeaturesD.pod
++++ b/FeaturesD.pod
+@@ -1,5 +1,7 @@
+ =pod
+ 
++=encoding iso8859-1
++
+ =head1 NAME
+ 
+ Embperl::Features - Features von Embperl 2.0
+--- a/Embperl/Form/Control/duration.pm
++++ b/Embperl/Form/Control/duration.pm
+@@ -113,6 +113,8 @@
+ 
+ =pod
+ 
++=encoding iso8859-1
++
+ =head1 NAME
+ 
+ Embperl::Form::Control::price - A price input control with optional unit inside an Embperl Form
+--- a/Embperl/Form/Control/price.pm
++++ b/Embperl/Form/Control/price.pm
+@@ -133,6 +133,8 @@
+ 
+ =pod
+ 
++=encoding iso8859-1
++
+ =head1 NAME
+ 
+ Embperl::Form::Control::price - A price input control with optional unit inside an Embperl Form
+--- a/Embperl/Form/Control/table.pm
++++ b/Embperl/Form/Control/table.pm
+@@ -271,34 +271,34 @@
+ 
+ =over
+ 
+-=item 0
++=item C<0>
+ 
+ Key for into data hashref
+ 
+-=item 1
++=item C<1>
+ 
+ Text to display
+ 
+-=item 2
++=item C<2>
+ 
+ Colspan (how many colums this cell should span)
+ 
+-=item 3
++=item C<3>
+ 
+ If set a control is displayed instead of a text. Must contain:
+ 
+ radio,<name>,<value> or checkbox,<name>,<value>
+ 
+-=item 4
++=item C<4>
+ 
+ Display as link. This item contains the name of the key in the data hashref
+ that holds the href.
+ 
+-=item 5
++=item C<5>
+ 
+ target for link
+ 
+-=item 6
++=item C<6>
+ 
+ Name of filter function. The value of the cell is process through this filter.
+ Filter functions are passed as hashref of subs in the parameter 'filters' .
+--- a/Embperl/Form/Validate.pm
++++ b/Embperl/Form/Validate.pm
+@@ -30,6 +30,8 @@
+ 
+ $VERSION = '2.5.0' ;
+ 
++=encoding iso8859-1
++
+ =head1 NAME
+ 
+ Embperl::Form::Validate - Form validation with server- and client-side support.

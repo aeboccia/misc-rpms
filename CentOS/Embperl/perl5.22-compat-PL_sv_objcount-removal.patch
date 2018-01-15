@@ -1,0 +1,490 @@
+Description: Compatibility fixes for Perl 5.22
+ This covers a) the PL_sv_objcount removal and b) tons of context
+ issues in the test suite -- which may actually indicate a bug in the
+ code and not the test suite..
+Author: Axel Beckert <abe@debian.org>
+Bug-Debian: https://bugs.debian.org/806897
+Bug: https://rt.cpan.org/Ticket/Display.html?id=110023
+Forwarded: https://rt.cpan.org/Public/Bug/Display.html?id=110023#txn-1584347
+
+Index: libembperl-perl/epmain.c
+===================================================================
+--- libembperl-perl.orig/epmain.c	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/epmain.c	2016-01-15 01:39:13.082977172 +0100
+@@ -1506,8 +1506,8 @@
+ #ifdef DMALLOC
+ 			    /* unsigned long mark, int not_freed_b, int freed_b, int details_b */
+     dmalloc_log_changed (nMemCheckpoint, 1, 0, 1) ;
+-    dmalloc_message ( "[%d]Request freed. Exit-SVs: %d -OBJs: %d\n", getpid(),
+-	    sv_count, sv_objcount) ;
++    dmalloc_message ( "[%d]Request freed. Exit-SVs: %d\n", getpid(),
++	    sv_count) ;
+     if (nMemCheckpoint2)
+         {
+         dmalloc_message ( "***TO PREVIOUS REQUEST***\n") ;
+Index: libembperl-perl/epnames.h
+===================================================================
+--- libembperl-perl.orig/epnames.h	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/epnames.h	2016-01-15 01:39:13.082977172 +0100
+@@ -325,9 +325,6 @@
+ #ifndef sv_count
+ #define sv_count PL_sv_count
+ #endif
+-#ifndef sv_objcount
+-#define sv_objcount PL_sv_objcount
+-#endif
+ #ifndef op_mask
+ #define op_mask PL_op_mask
+ #endif
+Index: libembperl-perl/Old.xs
+===================================================================
+--- libembperl-perl.orig/Old.xs	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/Old.xs	2016-01-15 01:39:13.082977172 +0100
+@@ -252,7 +252,7 @@
+     tReq * r
+     char * sText
+ CODE:
+-    lprintf (r->pApp,"[%d]MEM:  %s: SVs: %d OBJs: %d\n", r->pThread->nPid, sText, sv_count, sv_objcount) ;
++    lprintf (r->pApp,"[%d]MEM:  %s: SVs: %d\n", r->pThread->nPid, sText, sv_count) ;
+ 
+ SV *
+ embperl_Escape(r, str, mode)
+Index: libembperl-perl/test/html/plain.htm
+===================================================================
+--- libembperl-perl.orig/test/html/plain.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/plain.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -20,8 +20,8 @@
+ 
+ ARRAY @d = [+ do { my @tmp1 = @d; "@tmp1" } +] num = [+ @d +] <BR>
+ ARRAY @x = [+ do { my @tmp1 = %x; "@tmp1" } +] num = [+ @x +]  <BR>
+-HASH  %a = [+ do { my @tmp1 = %a; my @tmp11 = sort @tmp1 ; "@tmp11" } +]  num = [+ keys %a +] <BR>
+-HASH  %y = [+ do { my @tmp2 = %y; my @tmp21 = sort @tmp2 ; "@tmp21" } +]  num = [+ keys %y +] <BR>
++HASH  %a = [+ do { my @tmp1 = %a; my @tmp11 = sort @tmp1 ; "@tmp11" } +]  num = [+ 0+keys %a +] <BR>
++HASH  %y = [+ do { my @tmp2 = %y; my @tmp21 = sort @tmp2 ; "@tmp21" } +]  num = [+ 0+keys %y +] <BR>
+ 
+ 
+ First of all assign a value:
+@@ -40,8 +40,8 @@
+ 
+ ARRAY @d = [+ "@d" +] num = [+ @d +] <BR>
+ ARRAY @x = [+ "@x" +] num = [+ @x +]  <BR>
+-HASH  %a = [+ do { my @tmp1 = %a; my @tmp11 = sort @tmp1 ; "@tmp11" } +]  num = [+ keys %a +] <BR>
+-HASH  %y = [+ do { my @tmp2 = %y; my @tmp21 = sort @tmp2 ; "@tmp21" } +]  num = [+ keys %y +] <BR>
++HASH  %a = [+ do { my @tmp1 = %a; my @tmp11 = sort @tmp1 ; "@tmp11" } +]  num = [+ 0+keys %a +] <BR>
++HASH  %y = [+ do { my @tmp2 = %y; my @tmp21 = sort @tmp2 ; "@tmp21" } +]  num = [+ 0+keys %y +] <BR>
+ 
+ And now a and b together: [+ "$a$b" +]<P>
+ 
+Index: libembperl-perl/test/cmp/errorfirstrun.htm
+===================================================================
+--- libembperl-perl.orig/test/cmp/errorfirstrun.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/cmp/errorfirstrun.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -5,7 +5,7 @@
+ <table cellspacing='2' cellpadding='5'>
+ <tr bgcolor='#eeeeee'><td>
+ <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+-^\[\d+\]ERR:.+in Perl code: Global symbol \&quot;\$x\&quot; requires explicit package name at
++^\[\d+\]ERR:.+in Perl code: Global symbol \&quot;\$x\&quot; requires explicit package name
+ <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+ </td></tr>
+ <tr bgcolor='#eeeeee'><td>
+Index: libembperl-perl/test/cmp/varerr.htm56
+===================================================================
+--- libembperl-perl.orig/test/cmp/varerr.htm56	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/cmp/varerr.htm56	2016-01-15 01:39:13.082977172 +0100
+@@ -9,13 +9,13 @@
+ <table cellspacing='2' cellpadding='5'>
+ <tr bgcolor='#eeeeee'><td>
+ <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+-^\[.*?\]ERR\:  24\:  Error in Perl code\: Global symbol &quot;\$d&quot; requires explicit package name at 
+-^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$e&quot; requires explicit package name at 
+-^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$e&quot; requires explicit package name at 
+-^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$d&quot; requires explicit package name at 
+-^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$e&quot; requires explicit package name at 
+-^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$d&quot; requires explicit package name at 
+-^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$e&quot; requires explicit package name at 
++^\[.*?\]ERR\:  24\:  Error in Perl code\: Global symbol &quot;\$d&quot; requires explicit package name 
++^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$e&quot; requires explicit package name 
++^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$e&quot; requires explicit package name 
++^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$d&quot; requires explicit package name 
++^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$e&quot; requires explicit package name 
++^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$d&quot; requires explicit package name 
++^<br>&nbsp;&nbsp;&nbsp;&nbsp;Global symbol &quot;\$e&quot; requires explicit package name 
+ <!-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+ </td></tr>
+ </table>
+Index: libembperl-perl/test.pl
+===================================================================
+--- libembperl-perl.orig/test.pl	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test.pl	2016-01-15 01:39:13.082977172 +0100
+@@ -2125,7 +2125,7 @@
+ 	        unshift (@testargs, 'dbgbreak') if ($opt_dbgbreak) ;
+     
+ 	        $txt = "#$testnum ". $file . ($debug != $defaultdebug ?"-d $debug ":"") . ($test->{msg} || '') . '...' ;
+-	        $txt .= ' ' x (30 - length ($txt)) ;
++	        $txt .= ' ' x (50 - length ($txt)) ;
+ 	        print $txt ; 
+     
+     
+@@ -2211,7 +2211,7 @@
+ 
+ 
+ 	    $txt2 = "$txt from file...";
+-	    $txt2 .= ' ' x (30 - length ($txt2)) ;
++	    $txt2 .= ' ' x (50 - length ($txt2)) ;
+ 	    print $txt2 ; 
+ 
+ 	    unlink ($outfile) ;
+@@ -2232,7 +2232,7 @@
+ 	    if ($err == 0 || $opt_ignoreerror)
+ 		{
+ 		$txt2 = "$txt from memory...";
+-		$txt2 .= ' ' x (30 - length ($txt2)) ;
++		$txt2 .= ' ' x (50 - length ($txt2)) ;
+ 		print $txt2 ; 
+ 
+ 		unlink ($outfile) ;
+@@ -2254,7 +2254,7 @@
+ 	    if ($err == 0 || $opt_ignoreerror)
+ 		{
+ 		$txt2 = "$txt to memory...";
+-		$txt2 .= ' ' x (30 - length ($txt2)) ;
++		$txt2 .= ' ' x (50 - length ($txt2)) ;
+ 		print $txt2 ; 
+ 
+ 		my $outdata ;
+@@ -2281,7 +2281,7 @@
+ 	    if ($err == 0 || $opt_ignoreerror)
+ 		{
+ 		$txt2 = "$txt to tied handle...";
+-		$txt2 .= ' ' x (30 - length ($txt2)) ;
++		$txt2 .= ' ' x (50 - length ($txt2)) ;
+ 		print $txt2 ; 
+ 
+ 		my $outdata ;
+@@ -2310,7 +2310,7 @@
+ 	    if ($err == 0 || $opt_ignoreerror)
+ 		{
+ 		$txt2 = "$txt from/to memory...";
+-		$txt2 .= ' ' x (30 - length ($txt2)) ;
++		$txt2 .= ' ' x (50 - length ($txt2)) ;
+ 		print $txt2 ; 
+ 
+ 		my $outdata ;
+@@ -2355,7 +2355,7 @@
+ 	    if ($err == 0 || $opt_ignoreerror)
+ 		{
+ 		$txt2 = "$txt to memory...";
+-		$txt2 .= ' ' x (30 - length ($txt2)) ;
++		$txt2 .= ' ' x (50 - length ($txt2)) ;
+ 		print $txt2 ; 
+ 
+ 		my $outdata ;
+@@ -2389,7 +2389,7 @@
+ 	    if (0) #$err == 0 || $opt_ignoreerror)
+ 		{
+ 		$txt2 = "errornous parameter (path) ...";
+-		$txt2 .= ' ' x (30 - length ($txt2)) ;
++		$txt2 .= ' ' x (50 - length ($txt2)) ;
+ 		print $txt2 ; 
+ 
+ 		$err = eval { Embperl::Execute ({'inputfile'  => 'xxxx0',
+@@ -2411,7 +2411,7 @@
+ 	    if ($err == 0 || $opt_ignoreerror)
+ 		{
+ 		$txt2 = "errornous parameter (input) ...";
+-		$txt2 .= ' ' x (30 - length ($txt2)) ;
++		$txt2 .= ' ' x (50 - length ($txt2)) ;
+ 		print $txt2 ; 
+ 		my $out ;
+ 		@errors = () ;
+@@ -2438,7 +2438,7 @@
+ 	    if ($err == 0 || $opt_ignoreerror)
+ 		{
+ 		$txt2 = "errornous parameter (output) ...";
+-		$txt2 .= ' ' x (30 - length ($txt2)) ;
++		$txt2 .= ' ' x (50 - length ($txt2)) ;
+ 		print $txt2 ; 
+ 		my $out ;
+ 		@errors = () ;
+@@ -2488,7 +2488,7 @@
+                     $page = $src ;
+                                     
+                     $txt2 = "$src ...";
+-		    $txt2 .= ' ' x (30 - length ($txt2)) ;
++		    $txt2 .= ' ' x (50 - length ($txt2)) ;
+ 		    print $txt2 ; 
+ 
+ 		    my $outdata ;
+@@ -3006,7 +3006,7 @@
+ 		}
+     
+ 	    $txt = "#$testnum $file" . ($debug != $defaultdebug ?"-d $debug ":"") . '...' ;
+-	    $txt .= ' ' x (30 - length ($txt)) ;
++	    $txt .= ' ' x (50 - length ($txt)) ;
+ 	    print $txt ; 
+ 	    unlink ($outfile) ;
+ 	    
+Index: libembperl-perl/test/html/mdatsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/mdatsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/mdatsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -13,7 +13,7 @@
+ 			}
+ 		-]
+ 
+-        $mdat{cnt} = [+ $mdat{cnt}  +] <br>
++        $mdat{cnt} = [+ 0+$mdat{cnt}  +] <br>
+         $fdat{cnt} = [+ $fdat{cnt}  +] <br>
+ 
+         equal ? [+ ($mdat{cnt} == $fdat{cnt})?'yes':'no'  +] <br>
+Index: libembperl-perl/test/html/getsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/getsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/getsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -41,7 +41,7 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+@@ -55,7 +55,7 @@
+ 	-]
+ 
+ 
+-        $mdat{cnt} = -[+ $mdat{cnt}  +]- <br>
++        $mdat{cnt} = -[+ 0+$mdat{cnt}  +]- <br>
+         $udat{cnt} = -[+ $udat{cnt}  +]- <br>
+ 
+ 
+Index: libembperl-perl/test/html/execgetsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/execgetsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/execgetsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -13,7 +13,7 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $fdat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$fdat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+@@ -22,7 +22,7 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+@@ -36,7 +36,7 @@
+ 	-]
+ 
+ 
+-        $mdat{cnt} = -[+ $mdat{cnt}  +]- <br>
++        $mdat{cnt} = -[+ 0+$mdat{cnt}  +]- <br>
+         $udat{cnt} = -[+ $udat{cnt}  +]- <br>
+ 
+ 
+Index: libembperl-perl/test/html/delwrsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/delwrsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/delwrsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -11,13 +11,13 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+ 	[+ $num > 0?"ok (num=$num)":"Not a session hash (num=$num)" +]<p>
+ 
+-    $mdat{cnt} = -[+ $mdat{cnt}  +]- <br>
++    $mdat{cnt} = -[+ 0+$mdat{cnt}  +]- <br>
+     $udat{cnt} = -[+ $udat{cnt}  +]- <br>
+ 
+ 	[- $_[0] -> DeleteSession (1) ; -]
+@@ -27,7 +27,7 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+@@ -39,7 +39,7 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+Index: libembperl-perl/test/html/getbsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/getbsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/getbsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -22,7 +22,7 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+@@ -36,7 +36,7 @@
+ 	-]
+ 
+ 
+-        $mdat{cnt} = -[+ $mdat{cnt}  +]- <br>
++        $mdat{cnt} = -[+ 0+$mdat{cnt}  +]- <br>
+         $udat{cnt} = -[+ $udat{cnt}  +]- <br>
+ 
+ 
+Index: libembperl-perl/test/html/delrdsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/delrdsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/delrdsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -11,13 +11,13 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+ 	[+ $num > 0?"ok (num=$num)":"Not a session hash (num=$num)" +]<p>
+ 
+-    $mdat{cnt} = -[+ $mdat{cnt}  +]- <br>
++    $mdat{cnt} = -[+ 0+$mdat{cnt}  +]- <br>
+     $udat{cnt} = -[+ $udat{cnt}  +]- <br>
+ 
+ 	[- $_[0] -> DeleteSession (1) ; -]
+@@ -27,7 +27,7 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+Index: libembperl-perl/test/html/getdelsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/getdelsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/getdelsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -36,7 +36,7 @@
+ 	-]
+ 
+ 
+-        $mdat{cnt} = -[+ $mdat{cnt}  +]- <br>
++        $mdat{cnt} = -[+ 0+$mdat{cnt}  +]- <br>
+         $udat{cnt} = -[+ $udat{cnt}  +]- <br>
+ 
+ 
+Index: libembperl-perl/test/html/delsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/delsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/delsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -11,13 +11,13 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+ 	[+ $num > 0?"ok (num=$num)":"Not a session hash (num=$num)" +]<p>
+ 
+-    $mdat{cnt} = -[+ $mdat{cnt}  +]- <br>
++    $mdat{cnt} = -[+ 0+$mdat{cnt}  +]- <br>
+     $udat{cnt} = -[+ $udat{cnt}  +]- <br>
+ 
+ 	[- $_[0] -> DeleteSession (1) ; -]
+Index: libembperl-perl/test/html/setbadsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/setbadsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/setbadsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -10,6 +10,6 @@
+ 		$udat{$k} = $fdat{$k} ;
+ 		}
+ 	-]
+-	[+ $udat{_session_id} +]
++	[+ ''.$udat{_session_id} +]
+ </body>
+ </html>
+Index: libembperl-perl/test/html/setunknownsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/setunknownsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/setunknownsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -10,6 +10,6 @@
+ 		$udat{$k} = $fdat{$k} ;
+ 		}
+ 	-]
+-	[+ $udat{_session_id} +]
++	[+ ''.$udat{_session_id} +]
+ </body>
+ </html>
+Index: libembperl-perl/test/html/sidurl/geturlsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/sidurl/geturlsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/sidurl/geturlsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -41,7 +41,7 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $udat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$udat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+@@ -55,7 +55,7 @@
+ 	-]
+ 
+ 
+-        $mdat{cnt} = -[+ $mdat{cnt}  +]- <br>
++        $mdat{cnt} = -[+ 0+$mdat{cnt}  +]- <br>
+         $udat{cnt} = -[+ $udat{cnt}  +]- <br>
+ 
+ 
+Index: libembperl-perl/test/html/sidurl/getsdaturlsess.htm
+===================================================================
+--- libembperl-perl.orig/test/html/sidurl/getsdaturlsess.htm	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/test/html/sidurl/getsdaturlsess.htm	2016-01-15 01:39:13.082977172 +0100
+@@ -22,7 +22,7 @@
+ 
+ 	<table>
+ 		<tr>
+-			<td>[+ $ks[$row] +]</td><td>[+ $sdat{$ks[$row] || ''} +]</td>
++			<td>[+ $ks[$row] +]</td><td>[+ 0+$sdat{$ks[$row] || ''} +]</td>
+ 		</tr>
+ 	</table>
+ 
+Index: libembperl-perl/Makefile.PL
+===================================================================
+--- libembperl-perl.orig/Makefile.PL	2016-01-15 01:39:13.086977162 +0100
++++ libembperl-perl/Makefile.PL	2016-01-15 01:40:22.206816908 +0100
+@@ -1451,6 +1451,11 @@
+ 		    #else
+ 		    #	{
+                     	s/^\#\!.*?perl.*?\s(.*?)/#!$perlbinpath $1/ ;
++                    	# For some reason $perlbinpath contains double
++                    	# quotes which Apache doesn't like at all for
++                    	# CGI script interpreters. So remove them
++                    	# again.
++                    	s/^\#\!"(.*?)"/#!$1/;
+ 		    #	}
+ 		    s/^.*?perl.*?\s-x/$perlbinpath -x/ ;
+                     }

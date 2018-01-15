@@ -1,0 +1,45 @@
+Description: Add CGI.pm 4.x compatibility
+Author: Axel Beckert <abe@debian.org>
+Bug-Debian: https://bugs.debian.org/765125
+
+Index: libembperl-perl/Embperl.pm
+===================================================================
+--- libembperl-perl.orig/Embperl.pm	2014-10-23 01:06:48.000000000 +0200
++++ libembperl-perl/Embperl.pm	2014-10-23 01:21:19.892269141 +0200
+@@ -332,7 +332,7 @@
+ 	
+ 	$self -> log ("[$$]FORM: $_=$fdat->{$_}\n") if ($dbgForm) ; 
+ 
+-	if (ref($fdat->{$_}) eq 'Fh') 
++	if (ref($fdat->{$_}) eq 'Fh' or ref($fdat->{$_}) =~ /File::Temp/) 
+ 	    {
+ 	    $fdat->{"-$_"} = $cgi -> uploadInfo($fdat->{$_}) ;
+ 	    }
+Index: libembperl-perl/test/cmp/upload.htm
+===================================================================
+--- libembperl-perl.orig/test/cmp/upload.htm	2014-10-13 23:44:08.657839025 +0200
++++ libembperl-perl/test/cmp/upload.htm	2014-10-23 01:17:13.031528111 +0200
+@@ -11,8 +11,8 @@
+ Content-Type:	test/plain<br>
+ ^CGI-Version
+ ^cgiok           
+-filehandle:     Fh
+-Info:		Content-Disposition = form-data; name=&quot;upload&quot;; filename=&quot;12upload-filename&quot;
++^filehandle:     (Fh|CGI::File::Temp)
++^Info:		
+ Content-Type = test/plain
+ no:   1
+ size: 2048
+Index: libembperl-perl/test/html/upload.htm
+===================================================================
+--- libembperl-perl.orig/test/html/upload.htm	2014-10-23 01:16:00.204491900 +0200
++++ libembperl-perl/test/html/upload.htm	2014-10-23 01:22:31.439326828 +0200
+@@ -8,7 +8,7 @@
+ !]
+ <h1>Embperl Tests - File-Upload</h1>
+ 
+-[+ do { $cgiok = $CGI::VERSION > 2.45 ; @info = sort keys %{$fdat{-upload}} ; $cgiok?"@info":'Content-Disposition Content-Type' } +]
++[+ do { $cgiok = $CGI::VERSION > 2.45; $cgi4 = $CGI::VERSION >= 4; @info = sort keys %{$fdat{-upload}} ; ($cgiok||$cgi4)?"@info":'Content-Disposition Content-Type' } +]
+ Filename:       [+ $cgiok?$fdat{upload}:'upload-filename' +]<br>
+ Content-Type:	[+ $cgiok?$fdat{-upload} -> {'Content-Type'}:'test/plain' +]<br>
+ CGI-Version:    [+ $CGI::VERSION +]

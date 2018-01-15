@@ -1,0 +1,10 @@
+--- a/test/conf/config.pl	2018-01-15 00:00:18.488420421 -0500
++++ b/test/conf/config.pl	2018-01-15 00:01:25.622269135 -0500
+@@ -21,6 +21,7 @@
+ LoadModule alias_module "/usr/lib64/httpd/modules/mod_alias.so"
+ LoadModule mime_module "/usr/lib64/httpd/modules/mod_mime.so"
+ LoadModule dir_module "/usr/lib64/httpd/modules/mod_dir.so"
++LoadModule unixd_module "/usr/lib64/httpd/modules/mod_unixd.so"
+ LoadModule authn_core_module "/usr/lib64/httpd/modules/mod_authn_core.so"';
+ $EPSTARTUP='startup.pl';
+ $EPAPACHEVERSION='Server version: Apache/2.4.6 (CentOS)';
