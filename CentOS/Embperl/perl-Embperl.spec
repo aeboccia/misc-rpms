@@ -15,7 +15,7 @@ BuildRequires:  perl(MIME::Base64) perl(HTML::Parser) perl(HTML::HeadParser) per
 BuildRequires:  mod_perl-devel libxml2-devel libxslt-devel libnet-devel perl-libwww-perl perl-CGI
 Requires:       perl(File::Spec) >= 0.8
 Requires:       perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
-Requires:	perl-libwww-perl libxml2 libxslt
+Requires:	perl-libwww-perl libxml2 >= 2.7.4 libxslt >= 1.1.25
 Patch0: 	apache2.4-compat.patch
 Patch1: 	cgi-pm-4.04-compatibility.patch
 Patch2: 	delay.patch
