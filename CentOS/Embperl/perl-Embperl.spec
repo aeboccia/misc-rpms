@@ -6,21 +6,24 @@ License:        Artistic
 Group:          Development/Libraries
 URL:            http://search.cpan.org/dist/Embperl/
 Source0:        http://www.cpan.org/authors/id/G/GR/GRICHTER/Embperl-%{version}.tar.gz
-Source1: 	embperl-config.pl.patch
+Source1:        embperl.conf
+Source2:	99-embperl.conf 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  perl(ExtUtils::MakeMaker)
 BuildRequires:  perl(File::Spec) >= 0.8
 BuildRequires:  perl(MIME::Base64) perl(HTML::Parser) perl(HTML::HeadParser) perl(Digest::MD5)
-BuildRequires:  mod_perl-devel libxml2-devel libxslt-devel libnet-devel perl-libwww-perl
+BuildRequires:  mod_perl-devel libxml2-devel libxslt-devel libnet-devel perl-libwww-perl perl-CGI
 Requires:       perl(File::Spec) >= 0.8
 Requires:       perl(:MODULE_COMPAT_%(eval "`%{__perl} -V:version`"; echo $version))
 Patch0: 	apache2.4-compat.patch
 Patch1: 	cgi-pm-4.04-compatibility.patch
 Patch2: 	delay.patch
-#Patch3: 	embperl-config.pl.patch
+Patch3: 	add_unixd_makefile.patch
 Patch4: 	perl5.20-compat.patch
 Patch5:		perl5.22-compat-PL_sv_objcount-removal.patch
 Patch6:		pod-errors.patch
+AutoReq:	no
+AutoProv:	no
 
 %description
 Embperl is a framework for building websites with Perl.
@@ -30,7 +33,7 @@ Embperl is a framework for building websites with Perl.
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-#%patch3 -p1
+%patch3 -p1
 %patch4 -p1
 %patch5 -p1
 %patch6 -p1
@@ -55,11 +58,13 @@ mv $RPM_BUILD_ROOT%{_bindir}/embpmsgid.pl $RPM_BUILD_ROOT/%{_bindir}/embpmsgid
 #Fix up file permissions
 %{_fixperms} $RPM_BUILD_ROOT/*
 
+#Install Apache Configs
+mkdir -p $RPM_BUILD_ROOT/etc/httpd/conf.d/ && mkdir $RPM_BUILD_ROOT/etc/httpd/conf.modules.d/
+install -D -m 0644 %{SOURCE1} $RPM_BUILD_ROOT/etc/httpd/conf.d/
+install -D -m 0644 %{SOURCE2} $RPM_BUILD_ROOT/etc/httpd/conf.modules.d/
+
 %check
-#Hack this patch in for some reason it does not want to apply with the patch command
-patch %{_builddir}/Embperl-%{version}/test/conf/config.pl < %{SOURCE1}
-#Forget tests for now, too many issues
-#make test
+make test
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -73,8 +78,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man3/*
 %{_bindir}/embpexec
 %{_bindir}/embpmsgid
+%{_sysconfdir}/httpd/conf.d/embperl.conf
+%{_sysconfdir}/httpd/conf.modules.d/99-embperl.conf
 
 %changelog
-* Sun Jan 14 2018 aboccia 2.5.0-1
-- Hacking together the initial spec, it builds but some fixes are needed for make test to succeed.
-- Commenting out make test for now, YES I know that is BAD I will work on it 
+* Wed Jan 17 2018 aboccia 2.5.0-1
+- Initial spec created, all tests working
+- Added a new patch #3 for Perl makefile to enable unixd
+- Added configs for apache

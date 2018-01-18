@@ -1,0 +1,14 @@
+--- a/Makefile.PL	2014-03-16 09:47:53.000000000 -0400
++++ b/Makefile.PL	2018-01-17 21:29:28.919948505 -0500
+@@ -99,6 +99,11 @@
+ 			win32filetext   => 'ApacheModuleActions.dll or mod_actions.so',
+ 		      },
+ 
++      'unixd.c'  => { name	    => 'unixd_module', 
++			path	    => ['$apache_src/modules/standard/unixd.so', '$EPBINDIR/modules/mod_unixd.so', '$apache_src/mod_unixd.so'],
++			file	    => ['mod_unixd.so'],
++		      },
++
+ 
+     ) ;
+ 
